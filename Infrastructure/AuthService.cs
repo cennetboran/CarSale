@@ -7,18 +7,33 @@ using System.Security.Claims;
 using System.Text;
 using CarSale.Extensions;
 using CarSale.Models;
+using CarSale.Data.Entities;
+using AutoMapper;
 
 namespace CarSale.Infrastructure
 {
     public class AuthService : IAuthService
     {
         protected readonly AppDbContext _context;
-        private readonly AppSettings _appSettings;
+        protected readonly AppSettings _appSettings;
+        protected readonly IMapper _mapper;
 
-        public AuthService(AppDbContext context, IOptions<AppSettings> appSettings)
+        public AuthService(AppDbContext context, IOptions<AppSettings> appSettings, IMapper mapper)
         {
             _context = context;
             _appSettings = appSettings.Value;
+            _mapper = mapper;
+        }
+
+        public async Task<User> RegisterAsync(RegisterRequest req)
+        {
+            var user = _mapper.Map<User>(req);
+
+            user.PasswordHash = req.Password.GetMD5();
+            await _context.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            return user;
         }
 
         public async Task<ApiResponse<TokenResult>> LoginAsync(LoginRequest request)

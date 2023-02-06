@@ -24,5 +24,25 @@ namespace CarSale.Controllers
         {
             return await _authService.LoginAsync(req);
         }
+
+        [HttpPost("register")]
+        public async Task<ActionResult<ApiResponse<bool>>> Register(RegisterRequest req)
+        {
+            if (!req.Password.Equals(req.ConfirmPassword))
+            {
+                return StatusCode(400, new ApiResponse<bool>
+                {
+                    Result = false,
+                    Message = "Password's must be equal"
+                });
+            }
+
+            var user = await _authService.RegisterAsync(req);
+            return StatusCode(200, new ApiResponse<bool>
+            {
+                Result = true,
+                Message = $"Account created for {user.Email}"
+            });
+        }
     }
 }

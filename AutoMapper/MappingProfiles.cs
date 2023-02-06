@@ -10,6 +10,7 @@ namespace CarSale.AutoMapper
         {
             CreateMap<AddCarRequestModel, Car>();
             CreateMap<AddCarFeatureRequestModel, CarFeature>();
+            CreateMap<RegisterRequest, User>();
         }
     }
 }
