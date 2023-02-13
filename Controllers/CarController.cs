@@ -17,6 +17,57 @@ namespace CarSale.Controllers
             ICurrentUserService currentUserService) : base(repo, mapper, currentUserService)
         { }
 
+        [HttpGet("my")]
+        public async Task<ApiResponse<List<Car>>> GetMyCars([FromQuery] CarPagingRequestModel req)
+        {
+            var paging = new Paging
+            {
+                Column = req.Column,
+                Page = req.Page,
+                Size = req.Size,
+                SortBy = req.SortBy,
+            };
+            Expression<Func<Car, bool>> filterExpression = entity => true;
+            if (req.Price > 0)
+            {
+                Expression<Func<Car, bool>> priceExp = x => x.Price == req.Price;
+
+                filterExpression = Expression.Lambda<Func<Car, bool>>(
+                    Expression.AndAlso(filterExpression.Body, priceExp.Body),
+                    filterExpression.Parameters
+                );
+            }
+
+            if (!string.IsNullOrEmpty(req.Brand))
+            {
+                Expression<Func<Car, bool>> brandExp = x => x.Brand.Contains(req.Brand);
+                filterExpression = Expression.Lambda<Func<Car, bool>>(
+                 Expression.AndAlso(filterExpression.Body, brandExp.Body),
+                 filterExpression.Parameters
+             );
+            }
+
+            if (!string.IsNullOrEmpty(req.Color))
+            {
+                Expression<Func<Car, bool>> colorExp = x => x.Color.Contains(req.Color);
+                filterExpression = Expression.Lambda<Func<Car, bool>>(
+                 Expression.AndAlso(filterExpression.Body, colorExp.Body),
+                 filterExpression.Parameters
+             );
+            }
+            if (!string.IsNullOrEmpty(req.Model))
+            {
+                Expression<Func<Car, bool>> modelEx = x => x.Model.Contains(req.Model);
+                filterExpression = Expression.Lambda<Func<Car, bool>>(
+                 Expression.AndAlso(filterExpression.Body, modelEx.Body),
+                 filterExpression.Parameters
+             );
+            }
+            Expression<Func<Car,bool>> userExp = x => x.UserId == _currentUserService.Id;
+            return await _repository.GetAsync(paging, filterExpression, x => x.CarFeature);
+
+        }
+
         [HttpGet]
         public async Task<ApiResponse<List<Car>>> GetxAll([FromQuery] CarPagingRequestModel req)
         {
