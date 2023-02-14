@@ -8,7 +8,7 @@ using CarSale.Models;
 
 namespace CarSale.Controllers
 {
-    [Authorize]
+    
     public class CarController : BaseController<Car>
     {
         public CarController(
@@ -16,7 +16,7 @@ namespace CarSale.Controllers
             IMapper mapper,
             ICurrentUserService currentUserService) : base(repo, mapper, currentUserService)
         { }
-
+        [Authorize]
         [HttpGet("my")]
         public async Task<ApiResponse<List<Car>>> GetMyCars([FromQuery] CarPagingRequestModel req)
         {
@@ -129,6 +129,7 @@ namespace CarSale.Controllers
             };
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ApiResponse<Car>> AddCar(AddCarRequestModel req)
         {
@@ -139,18 +140,28 @@ namespace CarSale.Controllers
             return new ApiResponse<Car> { Message = "Car added", Result = car };
         }
 
+        [Authorize]
         [HttpDelete]
-        public async Task<ApiResponse<bool>> DeleteCar([FromQuery] int id)
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteCar([FromQuery] int id)
         {
+            var car = await _repository.GetByIdAsync(id);
+            if(car.UserId != _currentUserService.Id){
+                return StatusCode(400, new ApiResponse<bool>{Result= false, Message= "You can't delete a car that doesn't belongs to you" });
+            }
             var delete = await _repository.DeleteAsync(id);
-            return new ApiResponse<bool> { Result = delete, Message = "Car deleted" };
+            return StatusCode(200,new ApiResponse<bool> { Result = delete, Message = "Car deleted" });
         }
 
+        [Authorize]
         [HttpPut]
-        public async Task<ApiResponse<Car>> UpdateCar(AddCarRequestModel req, [FromQuery] int id)
+        public async Task<ActionResult<ApiResponse<Car>>> UpdateCar(AddCarRequestModel req, [FromQuery] int id)
         {
+            var car = await _repository.GetByIdAsync(id);
+            if(car.UserId != _currentUserService.Id){
+                return StatusCode(400, new ApiResponse<Car>{Result= car, Message= "You can't update a car that doesn't belongs to you" });
+            }
             var updatedCar = await _repository.UpdateAsync(_mapper.Map<Car>(req), id);
-            return new ApiResponse<Car> { Result = updatedCar, Message = "Car updated" };
+            return StatusCode(200,new ApiResponse<Car> { Result = updatedCar, Message = "Car updated" });
         }
     }
 }
